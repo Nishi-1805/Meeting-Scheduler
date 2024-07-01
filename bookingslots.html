@@ -1,0 +1,74 @@
+<!-- views/bookedSlots.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Booked Slots</title>
+    <link rel="stylesheet" href="/js/meeting.css">
+</head>
+<body>
+    <h1>Booked Slots</h1>
+    <div id="bookedSlotsContainer">
+        <!-- Display booked slots dynamically -->
+    </div>
+    <script>
+        // Function to fetch booked slots from server (replace with actual logic)
+        async function fetchBookedSlots() {
+            try {
+                const response = await fetch('/api/bookings'); // Replace with your server route
+                if (!response.ok) {
+                    throw new Error('Failed to fetch booked slots');
+                }
+                const bookedSlots = await response.json();
+                displayBookedSlots(bookedSlots);
+            } catch (error) {
+                console.error('Error fetching booked slots:', error.message);
+            }
+        }
+
+        // Function to display booked slots dynamically
+        function displayBookedSlots(bookedSlots) {
+            const bookedSlotsContainer = document.getElementById('bookedSlotsContainer');
+            bookedSlotsContainer.innerHTML = ''; // Clear previous content
+
+            bookedSlots.forEach(slot => {
+                const slotHtml = `
+                    <div class="booked-slot" id="bookedSlot${slot.id}">
+                        <h2>Meeting Scheduled</h2>
+                        <p><strong>Name:</strong> ${slot.name}</p>
+                        <p><strong>Email:</strong> ${slot.email}</p>
+                        <p><strong>Time Slot Booked:</strong> ${slot.timeSlot}</p>
+                        <p><strong>Google Meet ID:</strong> ${slot.googleMeetId}</p>
+                        <button class="cancel-button" onclick="cancelBooking(${slot.id})">Cancel</button>
+                    </div>
+                `;
+                bookedSlotsContainer.innerHTML += slotHtml;
+            });
+        }
+
+        // Function to cancel booking (replace with actual logic)
+        async function cancelBooking(bookingId) {
+            try {
+                const response = await fetch(`/api/bookings/${bookingId}`, {
+                    method: 'DELETE',
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to cancel booking');
+                }
+                // Remove the booked slot from the DOM
+                const bookedSlot = document.getElementById(`bookedSlot${bookingId}`);
+                if (bookedSlot) {
+                    bookedSlot.remove();
+                }
+            } catch (error) {
+                console.error('Error canceling booking:', error.message);
+            }
+        }
+
+        // Fetch booked slots when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchBookedSlots();
+        });
+    </script>
+</body>
+</html>
