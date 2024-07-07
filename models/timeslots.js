@@ -1,23 +1,22 @@
 const {DataTypes, Sequelize } = require('sequelize');
 const sequelize = require('../util/database');
-//const BookingSlot = require('./models/bookingslot');
 
 const TimeSlot = sequelize.define('TimeSlot', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        allowNull: false,
-        primaryKey: true
-    },
-    time: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    availableSlots: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0 
-    }
+  id: {
+    type: Sequelize.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  time: {
+    type: Sequelize.TIME,
+    allowNull: false,
+    dateFormat: 'HH:mm'
+  },
+  availableSlots: {
+    type: Sequelize.INTEGER,
+    defaultValue: 4
+  }
 });
 
 module.exports = TimeSlot;
+
