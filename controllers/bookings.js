@@ -1,72 +1,84 @@
-const BookingSlot = require('../models/bookingslots');
-const TimeSlot = require('../models/timeslots');
+const Booking = require('../models/booking');
+const TimeSlot = require('../models/Timeslot'); 
+const moment = require('moment');
+const sequelize = require('../util/database');
 
-exports.bookSlot = async (req, res, next) => {
-   const { timeSlotId, name, email, googleMeetId } = req.body;
-    try {
-        const timeSlot = await TimeSlot.findByPk(timeSlotId);
-        if (!timeSlot) {
-            return res.status(404).json({ message: 'Time slot not found' });
-        }
-
-        if (timeSlot.availableSlots <= 0) {
-            return res.status(400).json({ message: 'No available slots' });
-        }
-
-        // Decrement the available slots
-        timeSlot.availableSlots -= 1;
-        await timeSlot.save();
-
-        const newBooking = await Booking.create({ 
-            timeSlotId, 
-            name, 
-            email, 
-            googleMeetId 
-        });
-
-        res.status(201).json({ 
-            message: 'Booking successful', 
-            booking: newBooking, 
-            updatedTimeSlot: timeSlot 
-        });
-    } catch (err) {
-        next(err);
+exports.bookTimeSlot = async (req, res) => {
+  try {
+    const { name, email, time, meetLink } = req.body;
+    console.log('Received selectedTimeSlot:', req.body.time);
+    const timeOnly = moment(time, 'HH:mm');
+    if (!timeOnly.isValid()) {
+      throw new Error('Invalid time format. Please use HH:MM format.');
     }
-};
-exports.getAllBookings = async (req, res, next) => {
-    try {
-        const bookings = await BookingSlot.findAll({
-            include: [{ model: TimeSlot }] // Include TimeSlot details in the query
-        });
-        res.json(bookings);
-    } catch (err) {
-        next(err);
+    const formattedTime = timeOnly.format('HH:mm:ss'); // Format the time as a string
+    const booking = await Booking.create({ name, email, time: formattedTime, googleMeetLink: meetLink });
+    const timeSlot = await TimeSlot.findOne({
+      where: {
+        time: formattedTime // Use the formatted time string
+      }
+    });
+    if (!timeSlot) {
+      throw new Error('Time slot not found');
     }
+    if (timeSlot.availableSlots <= 0) {
+      throw new Error('Time slot is fully booked');
+    }
+    try {
+      timeSlot.availableSlots -= 1;
+      await timeSlot.save();
+    } catch (error) {
+      console.error('Error updating time slot:', error);
+      throw new Error('Error updating time slot');
+    }
+    res.json({ message: 'Time slot booked successfully', booking });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
 };
 
-exports.cancelBooking = async (req, res, next) => {
-    const bookingId = req.params.id;
-    try {
-        const booking = await BookingSlot.findByPk(bookingId);
-        if (!booking) {
-            return res.status(404).json({ message: 'Booking not found' });
-        }
-
-        const timeSlot = await TimeSlot.findByPk(booking.timeSlotId);
-
-        // Increase availableSlots for the canceled time slot
-        timeSlot.availableSlots += 1;
-        await timeSlot.save();
-
-        // Delete the booking
-        await booking.destroy();
-
-        res.json({ message: 'Booking canceled successfully' });
-    } catch (err) {
-        next(err);
+exports.deleteBooking = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Find the booking to delete
+    const booking = await Booking.findByPk(id);
+    if (!booking) {
+      throw new Error('Booking not found');
     }
+
+    // Find the time slot associated with the booking
+    const timeSlot = await TimeSlot.findOne({
+      where: {
+        time: booking.time
+      }
+    });
+    if (!timeSlot) {
+      throw new Error('Time slot not found');
+    }
+
+    // Increment the available slots count
+    timeSlot.availableSlots += 1;
+    await timeSlot.save();
+
+    // Delete the booking
+    await booking.destroy();
+
+    res.json({ message: 'Booking deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
 };
-function generateRandomMeetId() {
-    let randomId = Math.floor(Math.random() * 1000000);
-    return `https://meet.google.com/${randomId}`;
-}
+
+exports.getBookedTimeSlots = async (req, res) => {
+  try {
+    const bookedTimeSlots = await Booking.findAll({
+      attributes: ['id', 'name', 'email', 'time', 'googleMeetLink'],
+    });
+    res.json(bookedTimeSlots);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
