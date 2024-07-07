@@ -1,36 +1,24 @@
 const {DataTypes, Sequelize } = require('sequelize');
 const sequelize = require('../util/database');
-const TimeSlot = require('./timeslots'); 
+const TimeSlot = require('./Timeslot');
 
-const BookingSlot = sequelize.define('BookingSlot', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        allowNull: false,
-        primaryKey: true
-    },
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    email: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    googleMeetId: {
-        type: DataTypes.STRING,
-        allowNull: false, 
-        unique: true 
-    },
-    timeSlotId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: TimeSlot,
-            key: 'id'
-        }
-    }
+const Booking = sequelize.define('Booking', {
+  id: {
+    type: Sequelize.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  name: {
+    type: Sequelize.STRING
+  },
+  email: {
+    type: Sequelize.STRING
+  },
+  time: {
+    type: Sequelize.TIME
+  },
+  googleMeetLink: {
+    type: Sequelize.STRING
+  }
 });
-BookingSlot.belongsTo(TimeSlot, { foreignKey: 'timeSlotId' });
-
-module.exports = BookingSlot;
+module.exports = Booking;
