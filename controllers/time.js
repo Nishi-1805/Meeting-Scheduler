@@ -1,99 +1,50 @@
-const BookingSlot = require('../models/bookingslots');
-const TimeSlot = require('../models/timeslots');
+const TimeSlot = require('../models/Timeslot');
+const Booking = require('../models/booking');
 
-// Controller method to book a slot
-exports.bookSlot = async (req, res, next) => {
-    const { timeSlotId, name, email, googleMeetId } = req.body;
-    try {
-        console.log('Received booking request:', { timeSlotId, name, email, googleMeetId });
-
-        const timeSlot = await TimeSlot.findByPk(timeSlotId);
-        if (!timeSlot) {
-            console.error('Time slot not found for ID:', timeSlotId);
-            return res.status(404).json({ message: 'Time slot not found' });
-        }
-
-        if (timeSlot.availableSlots <= 0) {
-            console.error('No available slots for time slot:', timeSlotId);
-            return res.status(400).json({ message: 'No available slots' });
-        }
-
-        // Decrement the available slots
-        timeSlot.availableSlots -= 1;
-        await timeSlot.save();
-
-        // Save the booking details
-        const newBooking = await BookingSlot.create({ 
-            timeSlotId, 
-            name, 
-            email, 
-            googleMeetId 
-        });
-
-        console.log('Booking successful:', { newBooking, updatedTimeSlot: timeSlot });
-        res.status(201).json({ 
-            message: 'Booking successful', 
-            booking: newBooking, 
-            updatedTimeSlot: timeSlot 
-        });
-    } catch (err) {
-        console.error('Error booking slot:', err.message);
-        res.status(500).json({ message: 'Failed to book slot' });
-    }
+exports.getTimeSlots = async (req, res) => {
+  console.log('getTimeSlots function called');
+  try {
+    const timeSlots = await TimeSlot.findAll();
+    console.log('Time slots:', timeSlots); 
+    res.json(timeSlots);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching time slots' });
+  }
 };
 
-// Example controller methods
-exports.getAvailableTimeSlots = async (req, res, next) => {
-    try {
-        const timeSlots = await TimeSlot.findAll();
-        res.status(200).json(timeSlots);
-    } catch (err) {
-        next(err);
-    }
-};
-
-// Controller method to create a new time slot
-exports.createTimeSlot = async (req, res, next) => {
+exports.createTimeSlot = async (req, res) => {
+  try {
     const { time, availableSlots } = req.body;
-    try {
-        const newTimeSlot = await TimeSlot.create({ time, availableSlots });
-        res.status(201).json(newTimeSlot);
-    } catch (err) {
-        next(err);
-    }
+    const timeSlot = await TimeSlot.create({ time, availableSlots });
+    res.status(201).json({ message: 'Time slot created successfully', timeSlot });
+  } catch (error) {
+    console.error('Function not being called',error);
+    res.status(500).json({ message: 'Error creating time slot' });
+  }
 };
 
-// Controller method to update a time slot by ID
-exports.updateTimeSlot = async (req, res, next) => {
-    const id = req.params.id;
-    const { time, availableSlots } = req.body;
-    try {
-        const timeSlot = await TimeSlot.findByPk(id);
-        if (!timeSlot) {
-            return res.status(404).json({ message: 'Time slot not found' });
-        }
-
-        // Update the time slot
-        timeSlot.time = time;
-        timeSlot.availableSlots = availableSlots;
-        await timeSlot.save();
-
-        res.json(timeSlot);
-    } catch (err) {
-        next(err);
+exports.updateAvailableSlots = async (req, res) => {
+  try {
+    const time = req.params.time;
+    const increment = req.body.increment;
+    const timeSlot = await TimeSlot.findOne({ where: { time } });
+    if (!timeSlot) {
+      return res.status(404).json({ message: `Time slot not found for time ${time}` });
     }
-};
-
-// Controller method to delete a time slot by ID
-exports.deleteTimeSlot = async (req, res, next) => {
-    const id = req.params.id;
-    try {
-        const deletedTimeSlot = await TimeSlot.destroy({ where: { id } });
-        if (!deletedTimeSlot) {
-            return res.status(404).json({ message: 'Time slot not found' });
-        }
-        res.json({ message: 'Time slot deleted successfully' });
-    } catch (err) {
-        next(err);
+    const newAvailableSlots = timeSlot.availableSlots + increment;
+    if (newAvailableSlots <= 0) {
+      await timeSlot.destroy();
+    } else if (newAvailableSlots > 4) {
+      timeSlot.availableSlots = 4;
+      await timeSlot.save();
+    } else {
+      timeSlot.availableSlots = newAvailableSlots;
+      await timeSlot.save();
     }
+    res.json({ message: 'Time slot updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error updating time slot' });
+  }
 };
