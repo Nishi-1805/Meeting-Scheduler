@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Booking System</title>
-  <link rel="stylesheet" href="/js/meeting.css"> <!-- link to your CSS file -->
+  <link rel="stylesheet" href="/js/meeting.css">
 </head>
 
 <body>
@@ -44,13 +44,12 @@
         .then(data => {
           timeSlots = data;
           const timeSlotsContainer = document.getElementById('time-slots-tbody');
-          // const availableTimeSlots = timeSlots.filter(timeSlot => timeSlot.availableSlots > 0 && timeSlot.availableSlots <= 4);
           timeSlots.forEach(timeSlot => {
             const timeSlotElement = document.createElement('tr');
             const timeTd = document.createElement('td');
             const timeDiv = document.createElement('div');
             timeDiv.textContent = timeSlot.time;
-            timeDiv.setAttribute('style', 'font-size: 24px; font-weight: bold;'); // Add styles to the time
+            timeDiv.setAttribute('style', 'font-size: 24px; font-weight: bold;');
             const availableSlotsLink = document.createElement('a');
             availableSlotsLink.textContent = `${timeSlot.availableSlots} slots available`;
             availableSlotsLink.className = 'available-slot-link';
@@ -58,9 +57,7 @@
             timeTd.appendChild(availableSlotsLink);
             timeSlotElement.appendChild(timeTd);
             availableSlotsLink.addEventListener('click', () => {
-              // Show the booking form when a time slot is clicked
               document.getElementById('booking-form-container').style.display = 'block';
-              // Set the selected time slot value
               document.getElementById('selected-time-slot').value = timeSlot.time;
             });
             timeSlotsContainer.appendChild(timeSlotElement);
@@ -90,7 +87,7 @@
         const timeTd = document.createElement('td');
         const timeDiv = document.createElement('div');
         timeDiv.textContent = timeSlot.time;
-        timeDiv.setAttribute('style', 'font-size: 24px; font-weight: bold;'); // Add styles to the time
+        timeDiv.setAttribute('style', 'font-size: 24px; font-weight: bold;');
         const availableSlotsLink = document.createElement('a');
         availableSlotsLink.textContent = `${timeSlot.availableSlots} slots available`;
         availableSlotsLink.className = 'available-slot-link';
@@ -98,9 +95,7 @@
         timeTd.appendChild(availableSlotsLink);
         timeSlotElement.appendChild(timeTd);
         availableSlotsLink.addEventListener('click', () => {
-          // Show the booking form when a time slot is clicked
           document.getElementById('booking-form-container').style.display = 'block';
-          // Set the selected time slot value
           document.getElementById('selected-time-slot').value = timeSlot.time;
         });
         timeSlotContainer.appendChild(timeSlotElement);
@@ -121,7 +116,6 @@
         .then(response => response.json())
         .then(data => {
           console.log(data);
-          // Refetch the available time slots to update the UI
           fetch('/time-slots')
             .then(response => response.json())
             .then(timeSlots => {
@@ -132,7 +126,6 @@
         .catch(error => console.error(error));
     }
 
-    // Add the handleSubmit function
     function handleSubmit(event) {
       event.preventDefault();
       const formData = new FormData(event.target);
@@ -140,7 +133,6 @@
       const email = formData.get('email');
       const selectedTimeSlot = formData.get('selectedTimeSlot');
 
-      // Get the available slots count for the selected time slot
       fetch(`/get-available-slots/${selectedTimeSlot}`)
         .then(response => {
           if (!response.ok) {
@@ -158,7 +150,6 @@
             const timeOnly = moment(selectedTimeSlot, 'HH:mm').format('HH:mm');
             const meetLink = generateMeetLink();
 
-            // Send the data to the server
             fetch('/api/book-time-slot', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -168,8 +159,9 @@
               .then(data => {
                 updateAvailableSlots(selectedTimeSlot);
                 displayBookedTimeSlot({ name, email, time: timeOnly, meetLink: generateMeetLink() }, timeSlots);
-                document.getElementById('booking-form-container').style.display = 'none'; // Hide the form
-                document.getElementById('booked-time-slots-container').style.display = 'block'; // Show the booked time slots
+                document.getElementById('booking-form-container').style.display = 'none';
+                document.getElementById('booked-time-slots-container').style.display = 'block';
+                event.target.reset();
               })
               .catch(error => console.error(error));
           }
@@ -179,7 +171,7 @@
           alert('Error: ' + error.message);
         });
     }
-    // Display the booked time slot
+
     function displayBookedTimeSlot(data) {
       const bookedTimeSlotElement = document.createElement('tr');
       const timeTd = document.createElement('td');
@@ -201,7 +193,7 @@
       deleteButton.textContent = 'Cancel';
       deleteButton.className = 'delete-button';
       deleteButton.addEventListener('click', () => {
-        // Send a DELETE request to the server to cancel the booking
+
         fetch(`/api/cancel-booking/${data.id}`, {
           method: 'DELETE',
         })
@@ -209,16 +201,15 @@
           .then(data => {
             console.log(data);
             if (data.message === 'Time slot not found') {
-          console.error('Time slot not found');
-          return;
-        }
-            // Remove the booked time slot from the table
+              console.error('Time slot not found');
+              return;
+            }
             bookedTimeSlotElement.remove();
-         
+
             const timeSlotElement = document.querySelector(`#time-slot-${data.time}`);
             timeSlotElement.style.display = 'block';
-      const availableSlotsLink = document.querySelector(`a.available-slot-link[textContent="${data.time}"]`);
-      availableSlotsLink.textContent = `${data.time} (${timeSlot.availableSlots} slots available)`;
+            const availableSlotsLink = document.querySelector(`a.available-slot-link[textContent="${data.time}"]`);
+            availableSlotsLink.textContent = `${data.time} (${timeSlot.availableSlots} slots available)`;
           })
           .catch(error => console.error(error));
       });
