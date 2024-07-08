@@ -5,7 +5,7 @@ exports.getTimeSlots = async (req, res) => {
   console.log('getTimeSlots function called');
   try {
     const timeSlots = await TimeSlot.findAll();
-    console.log('Time slots:', timeSlots); 
+   // console.log('Time slots:', timeSlots); 
     res.json(timeSlots);
   } catch (error) {
     console.error(error);
@@ -48,3 +48,16 @@ exports.updateAvailableSlots = async (req, res) => {
     res.status(500).json({ message: 'Error updating time slot' });
   }
 };
+exports.getAvailableSlots = async (req, res) => {
+  try {
+    const time = req.params.time;
+    const timeSlot = await TimeSlot.findOne({ where: { time } });
+    if (!timeSlot) {
+      return res.status(404).json({ message: `Time slot not found for time ${time}` });
+    }
+    res.json({ availableSlots: timeSlot.availableSlots });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching available slots' });
+  }
+}
