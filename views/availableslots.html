@@ -37,10 +37,12 @@
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
   <script>
+    let timeSlots = [];
     window.addEventListener('DOMContentLoaded', () => {
       fetch('/time-slots')
         .then(response => response.json())
-        .then(timeSlots => {
+        .then(data => {
+          timeSlots = data;
           const timeSlotsContainer = document.getElementById('time-slots-tbody');
           // const availableTimeSlots = timeSlots.filter(timeSlot => timeSlot.availableSlots > 0 && timeSlot.availableSlots <= 4);
           timeSlots.forEach(timeSlot => {
@@ -65,17 +67,9 @@
           });
         })
         .catch(error => {
-          console.error('Time-slots not accessible or not found',error);
+          console.error('Time-slots not accessible or not found', error);
         });
 
-      //        fetch('/api/time-slots')
-      // .then(response => response.json())
-      // .then(timeSlots => {
-      //    const availableTimeSlots = timeSlots.filter(timeSlot => timeSlot.availableSlots > 0 && timeSlot.availableSlots <= 4);
-      //    renderTimeSlots(availableTimeSlots);
-      //  });
-
-      // Fetch booked time slots from database
       fetch('/api/get-booked-time-slots')
         .then(response => response.json())
         .then(bookedTimeSlots => {
@@ -119,10 +113,10 @@
     }
 
     function updateAvailableSlots(time, increment) {
-      fetch(`/api/update/${time}`, {
+      fetch(`/time-slots/${time}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ increment }),
+        body: JSON.stringify({ increment: -1 }),
       })
         .then(response => response.json())
         .then(data => {
@@ -146,27 +140,45 @@
       const email = formData.get('email');
       const selectedTimeSlot = formData.get('selectedTimeSlot');
 
-      // Generate a random Google Meet link
-      const timeOnly = moment(selectedTimeSlot, 'HH:mm').format('HH:mm');
-      const meetLink = generateMeetLink();
-
-      // Send the data to the server
-      fetch('/api/book-time-slot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, time: timeOnly, meetLink }),
-      })
-        .then(response => response.json())
-        .then(data => {
-          updateAvailableSlots(selectedTimeSlot, -1);
-          displayBookedTimeSlot({ name, email, time: timeOnly, meetLink: generateMeetLink() });
-          document.getElementById('booking-form-container').style.display = 'none'; // Hide the form
-          document.getElementById('booked-time-slots-container').style.display = 'block'; // Show the booked time slots
-
+      // Get the available slots count for the selected time slot
+      fetch(`/get-available-slots/${selectedTimeSlot}`)
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(error => {
+              throw new Error(error.error);
+            });
+          }
+          return response.json();
         })
-        .catch(error => console.error(error));
-    }
+        .then(data => {
+          const availableSlots = data.availableSlots;
+          if (availableSlots < 1 || availableSlots > 4) {
+            alert('Sorry, no slots available for this time slot');
+          } else {
+            const timeOnly = moment(selectedTimeSlot, 'HH:mm').format('HH:mm');
+            const meetLink = generateMeetLink();
 
+            // Send the data to the server
+            fetch('/api/book-time-slot', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name, email, time: timeOnly, meetLink }),
+            })
+              .then(response => response.json())
+              .then(data => {
+                updateAvailableSlots(selectedTimeSlot);
+                displayBookedTimeSlot({ name, email, time: timeOnly, meetLink: generateMeetLink() }, timeSlots);
+                document.getElementById('booking-form-container').style.display = 'none'; // Hide the form
+                document.getElementById('booked-time-slots-container').style.display = 'block'; // Show the booked time slots
+              })
+              .catch(error => console.error(error));
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          alert('Error: ' + error.message);
+        });
+    }
     // Display the booked time slot
     function displayBookedTimeSlot(data) {
       const bookedTimeSlotElement = document.createElement('tr');
@@ -196,13 +208,17 @@
           .then(response => response.json())
           .then(data => {
             console.log(data);
+            if (data.message === 'Time slot not found') {
+          console.error('Time slot not found');
+          return;
+        }
             // Remove the booked time slot from the table
             bookedTimeSlotElement.remove();
-            const timeSlot = timeSlots.find(timeSlot => timeSlot.time === data.time);
-            timeSlot.availableSlots++;
-            const availableSlotsLink = document.querySelector(`a.available-slot-link[textContent="${data.time}"]`);
-            availableSlotsLink.textContent = `${timeSlot.availableSlots} slots available`;
-
+         
+            const timeSlotElement = document.querySelector(`#time-slot-${data.time}`);
+            timeSlotElement.style.display = 'block';
+      const availableSlotsLink = document.querySelector(`a.available-slot-link[textContent="${data.time}"]`);
+      availableSlotsLink.textContent = `${data.time} (${timeSlot.availableSlots} slots available)`;
           })
           .catch(error => console.error(error));
       });
@@ -214,5 +230,4 @@
     document.getElementById('booking-form').addEventListener('submit', handleSubmit);
   </script>
 </body>
-
 </html>
