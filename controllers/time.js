@@ -5,7 +5,7 @@ exports.getTimeSlots = async (req, res) => {
   console.log('getTimeSlots function called');
   try {
     const timeSlots = await TimeSlot.findAll();
-   // console.log('Time slots:', timeSlots); 
+  
     res.json(timeSlots);
   } catch (error) {
     console.error(error);
