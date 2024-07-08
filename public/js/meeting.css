@@ -88,3 +88,63 @@ h1 {
 #booking-form input[type="submit"]:hover {
   background-color: #3e8e41;
 }
+/* Add some padding to the booked time slots table */
+#booked-time-slots-table {
+  padding: 10px;
+}
+
+/* Style the booked time slots rows */
+#booked-time-slots-tbody tr {
+  border-bottom: 1px solid #ccc;
+}
+
+/* Add some space between the booked time slots */
+#booked-time-slots-tbody tr:not(:last-child) {
+  margin-bottom: 10px;
+}
+
+/* Style the time column */
+#booked-time-slots-tbody td:first-child {
+  font-weight: bold;
+  font-size: 16px;
+  width: 80px;
+  padding: 5px;
+}
+
+/* Style the name column */
+#booked-time-slots-tbody td:nth-child(2) {
+  font-size: 16px;
+  width: 50px;
+  padding: 5px;
+}
+
+/* Style the email column */
+#booked-time-slots-tbody td:nth-child(3) {
+  font-size: 16px;
+  width: 150px;
+  padding: 5px;
+}
+
+/* Style the Google Meet link column */
+#booked-time-slots-tbody td:nth-child(4) {
+  font-size: 16px;
+  width: 150px;
+  padding: 5px;
+  text-decoration: underline;
+  color: blue;
+}
+
+
+/* Style the cancel button */
+.delete-button {
+  background-color: #ff0000;
+  color: #ffffff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  background-color: #cc0000;
+}
