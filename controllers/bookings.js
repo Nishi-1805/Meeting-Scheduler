@@ -21,11 +21,12 @@ exports.bookTimeSlot = async (req, res) => {
     if (!timeSlot) {
       throw new Error('Time slot not found');
     }
-    if (timeSlot.availableSlots <= 0) {
+    
+    if (timeSlot.availableSlots <= 0 || timeSlot.availableSlots > 4) {
       throw new Error('Time slot is fully booked');
     }
     try {
-      timeSlot.availableSlots -= 1;
+      //timeSlot.availableSlots -= 1;
       await timeSlot.save();
     } catch (error) {
       console.error('Error updating time slot:', error);
@@ -46,7 +47,7 @@ exports.deleteBooking = async (req, res) => {
     if (!booking) {
       throw new Error('Booking not found');
     }
-
+   
     // Find the time slot associated with the booking
     const timeSlot = await TimeSlot.findOne({
       where: {
@@ -56,21 +57,22 @@ exports.deleteBooking = async (req, res) => {
     if (!timeSlot) {
       throw new Error('Time slot not found');
     }
-
     // Increment the available slots count
     timeSlot.availableSlots += 1;
+    if (timeSlot.availableSlots > 4) {
+      timeSlot.availableSlots = 4; // Limit the available slots count to 4
+    }
     await timeSlot.save();
 
     // Delete the booking
     await booking.destroy();
-
-    res.json({ message: 'Booking deleted successfully' });
+  
+    res.json({ message: 'Booking deleted successfully',timeSlot});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
-
 exports.getBookedTimeSlots = async (req, res) => {
   try {
     const bookedTimeSlots = await Booking.findAll({
